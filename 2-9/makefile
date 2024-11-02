@@ -12,7 +12,7 @@ N =100000000
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(SRC)
-	@mpicc -Wall -o $@ $< -lm
+	@$(CC) -Wall -o $@ $< -lm
 
 run:
 	@cat /dev/null > time.log
