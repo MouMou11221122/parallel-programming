@@ -66,18 +66,18 @@ int main(int argc, char** argv) {
 	long long prime;
 	long long first;
 	long long global_idx;
-	long long cnt;
-	long long global_cnt = 0;
 	long long local_max = -1;
 	long long global_max = 0;
 	long long local_min_prime = -1, local_max_prime = -1;
 	long long pre, cur;
-	long long* local_max_ary = NULL;
+	double start_time, end_time;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &idx);
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 	n = atoll(argv[1]);
+
+	start_time = MPI_Wtime();
 
 	if(!idx) {
 		global_min_info = malloc(sizeof(long long) * p);
@@ -139,6 +139,8 @@ int main(int argc, char** argv) {
 	MPI_Gather(&local_max_prime, 1, MPI_LONG_LONG, global_max_info + idx, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
 	if(!idx) {
 		cal_result(global_max, global_min_info, global_max_info, p - 1);
+		end_time = MPI_Wtime();
+		output_real_exec_time(end_time - start_time);
 		free(global_min_info);
 		free(global_max_info);
 	}
