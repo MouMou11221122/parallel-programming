@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <math.h>
 
-// Function to check if a number is prime
 int is_prime(int num) {
     if (num <= 1) {
-        return 0;  // 0 and 1 are not prime numbers
+        return 0;  
     }
     if (num == 2) {
-        return 1;  // 2 is prime
+        return 1;  
     }
     if (num % 2 == 0) {
-        return 0;  // All other even numbers are not prime
+        return 0;  
     }
     
     for (int i = 3; i <= sqrt(num); i += 2) {
@@ -18,10 +17,9 @@ int is_prime(int num) {
             return 0;
         }
     }
-    return 1;  // The number is prime
+    return 1;  
 }
 
-// Function to count consecutive odd primes and print them
 void count_consecutive_odd_primes(int n) {
     int count = 0;
     
