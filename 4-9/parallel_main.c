@@ -10,9 +10,13 @@
 
 long long* global_min_info = NULL,* global_max_info = NULL;
 
+
+static inline
 void diff(long long* l_max, long long pre, long long cur) {
 	*l_max = *l_max <= (cur - pre) ? (cur - pre) : *l_max;
 }
+
+
 
 void cal_result (long long g_max, long long* g_min_info, long long* g_max_info, int p) {
 	int pre_idx, cur_idx;
