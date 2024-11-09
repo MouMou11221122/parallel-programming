@@ -3,7 +3,6 @@
 #include <mpi.h>
 
 #include "utilities.h"
-
 #define N 10000000000
 
 static inline
