@@ -13,4 +13,13 @@ gcc -Wall -o buildMatrix buildMatrix.c
 mpicc -Wall -o a.out lifeGame.c
 mpirun -np x ./a.out matrix.bin
 ```
-
+### View the m * n matrix
+The matrix can be view by the UNIX command
+```
+od -tx matrix.bin
+```
+or
+```
+od -i matrix.bin
+```
+The first two 4-byte elements represent the number of rows (m) and the number of columns (n) of an m * n matrix, respectively. Each subsequent single byte represents an individual element.
