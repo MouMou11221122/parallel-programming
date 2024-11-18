@@ -8,7 +8,7 @@ CFLAGS = -Wall -O3
 all: $(EXEC)
 
 $(EXEC): $(SRC)
-	$(CC) $(CFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf $(EXEC)
+	@rm -rf $(EXEC)

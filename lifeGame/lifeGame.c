@@ -166,8 +166,10 @@ void periolically_show (bool** sub_matrix, int iteration, int freq) {
 	int cnt = 0;
 	bool* output_buf;
 
-	if (proc_idx == 0) output_buf = malloc(sizeof(bool) * BLOCK_NUMS(proc_num - 1, proc_num, row_num));
-
+	if (proc_idx == 0) {
+		output_buf = malloc(sizeof(bool) * BLOCK_NUMS(proc_num - 1, proc_num, row_num));
+		if (output_buf == NULL)	MPI_Abort(MPI_COMM_WORLD, 1);
+	}
 	for (int i = -1; i < iteration; i++) {
 		if (i == -1 || ++cnt == freq) {
 			if (proc_idx == 0) {
