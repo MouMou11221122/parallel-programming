@@ -8,8 +8,8 @@ typedef int dtype;
 #define PTR_SIZE sizeof(long)
 
 
-#define DATA_MSG			 	 0
-#define PROMPT_MSG				 1
+#define DATA_MSG				 	 0
+#define PROMPT_MSG					 1
 #define RESPONSE_MSG				 2
 #define OPEN_FILE_ERROR				-1
 
@@ -37,7 +37,7 @@ void print_submatrix(
                 if (dtype == MPI_FLOAT)
                     printf("%6.3f ", ((float **)a)[i][j]);
                 else if (dtype == MPI_INT)
-                    printf("%6d ", ((int **)a)[i][j]);
+                    printf("%12d ", ((int **)a)[i][j]);
             }
         }
         putchar('\n');
@@ -68,7 +68,7 @@ void read_row_striped_matrix (
 	
 	MPI_Comm_size(comm, &p);
 	MPI_Comm_rank(comm, &id);
-	datum_size = sizeof(dtype);
+	datum_size = sizeof(dtype) - 4;
 
 	if (id == p - 1) {
 		infileptr = fopen(s, "rb");
@@ -100,12 +100,12 @@ void read_row_striped_matrix (
 		for(int i = 0; i < p - 1; i++) {
 			x = fread(*storage, datum_size, BLOCK_SIZE(i, p, *m) * *n, infileptr);
 			//printf("Send to process %d %d rows and %d elements and n : %d\n", i, BLOCK_SIZE(i, p, *m), x, *n);
-			for (int k = 0; k < BLOCK_SIZE(i, p, *m); k++) {
+			/*for (int k = 0; k < BLOCK_SIZE(i, p, *m); k++) {
 				for (int j = 0; j < *n; j++) {
 					printf("%d ", *((int *)(*storage) + k * *n + j));
 				}
 				printf("\n");
-			}
+			}*/
 			MPI_Send(*storage, BLOCK_SIZE(i, p, *m) * *n, dtype, i, DATA_MSG, comm);
 		}
 		x = fread(*storage, datum_size, local_rows * *n, infileptr);
@@ -139,7 +139,7 @@ void print_row_striped_matrix (
 	if (!id) {
 		print_submatrix(a, dtype, local_rows, n);
 		if (p > 1) {
-			datum_size = sizeof(dtype);
+			datum_size = sizeof(dtype) - 4;
 			max_block_size = BLOCK_SIZE(p - 1, p, m);
 			bstorage = (void *) malloc(max_block_size * n * datum_size);
 			b = (void **) malloc(max_block_size * PTR_SIZE);
@@ -209,14 +209,21 @@ int main (int argc, char *argv[]) {
         (void *) &storage, MPI_TYPE, &m, &n, MPI_COMM_WORLD);
 
     if (m != n) { 
-	fprintf (stderr, "Matrix must be square\n");
-	exit(1);
+		fprintf (stderr, "Matrix must be square\n");
+		exit(1);
     }
-    print_row_striped_matrix ((void **) a, MPI_TYPE, m, n,
-        MPI_COMM_WORLD);
+	if (!id) {
+		printf("initial state :\n");
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+    print_row_striped_matrix ((void **) a, MPI_TYPE, m, n, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (!id) {
+		printf("result :\n");
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
     compute_shortest_paths (id, p, (dtype **) a, n);
-    print_row_striped_matrix ((void **) a, MPI_TYPE, m, n,
-        MPI_COMM_WORLD);
+    print_row_striped_matrix ((void **) a, MPI_TYPE, m, n, MPI_COMM_WORLD);
     MPI_Finalize();
 	exit(0);
 }
