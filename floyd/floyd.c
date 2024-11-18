@@ -10,8 +10,8 @@ typedef int dtype;
 
 #define DATA_MSG			 	 0
 #define PROMPT_MSG				 1
-#define RESPONSE_MSG			 2
-#define OPEN_FILE_ERROR			-1
+#define RESPONSE_MSG				 2
+#define OPEN_FILE_ERROR				-1
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define BLOCK_LOW(id, p, n)  ((id) * (n) / (p))
@@ -47,13 +47,13 @@ void print_submatrix(
 
 
 void read_row_striped_matrix (
-	char				*s,			/* IN - File name */
-	void				***subs,	/* OUT - 2D submatrix indices */
-	void				**storage,  /* OUT - Submatrix stored here */
-	MPI_Datatype		dtype,		/* IN - Matrix element type */
-	int					*m,			/* OUT - Matrix rows */
-	int					*n,			/* OUT - Matrix rows */
-	MPI_Comm			comm		/* IN - Communicator */
+	char				*s,				/* IN - File name */
+	void				***subs,			/* OUT - 2D submatrix indices */
+	void				**storage,			/* OUT - Submatrix stored here */
+	MPI_Datatype			dtype,				/* IN - Matrix element type */
+	int				*m,				/* OUT - Matrix rows */
+	int				*n,				/* OUT - Matrix rows */
+	MPI_Comm			comm				/* IN - Communicator */
 ) 
 {
 	int			datum_size;
@@ -125,12 +125,12 @@ void print_row_striped_matrix (
 	MPI_Status	status;				/* Result of receive */
 	void		*bstorage;			/* Elements received from another process */
 	void		**b;				/* 2D array indexing into bstorage */
-	int			datum_size;			/* Bytes per element */
-	int			id;					/* Process rank */
-	int			local_rows;			/* This proc's rows */
+	int			datum_size;		/* Bytes per element */
+	int			id;			/* Process rank */
+	int			local_rows;		/* This proc's rows */
 	int			max_block_size;		/* Most matrix rows held by any process */
-	int			prompt;				/* Dummy variable */
-	int			p;					/* Number of processes */
+	int			prompt;			/* Dummy variable */
+	int			p;			/* Number of processes */
 	int			i;	
 
 	MPI_Comm_rank(comm, &id);
