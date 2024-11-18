@@ -5,7 +5,7 @@ CSV = output.csv
 LOG = time.log
 NP_VALUES = 1 2 3 4 5 6 7 8
 
-.PHYNY: all clean run
+.PHONY: all clean run
 
 all: $(EXECUTABLE)
 

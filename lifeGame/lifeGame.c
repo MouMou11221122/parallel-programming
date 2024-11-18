@@ -214,14 +214,14 @@ int main (int argc, char** argv) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &proc_idx);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
 
-	if (!proc_idx && argc != 2) {
-		fprintf(stderr, "Usage: %s [file name]\n", argv[0]);
+	if (!proc_idx && argc != 4) {
+		fprintf(stderr, "Usage: %s [file name] [iteration] [frequency]\n", argv[0]);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	file_name = argv[1];
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	/*	open matrix.bin	*/
+	/*	open the matrix file	*/
 	fd = open(file_name, O_RDONLY);
 	if (fd == -1) {
 		fprintf(stderr, "Fail to open file : matrix.bin from process %d\n", proc_idx);
@@ -273,15 +273,9 @@ int main (int argc, char** argv) {
 	printf("\n");
 	*/
 
-	int iteration;
-	int display_freq;
-	iteration = 3;
-	display_freq = 1;
+	int iteration = atoi(argv[2]);
+	int display_freq = atoi(argv[3]);
 
-	//show_sub_matrix(sub_matrix);
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//update_sub_matrix(&sub_matrix);
-	//show_sub_matrix(sub_matrix);
 	periolically_show(&sub_matrix, iteration, display_freq);
 
 	MPI_Finalize();
