@@ -1,6 +1,13 @@
 ### Problem description
 This is a parallel floyd warshall algorithm.
 
+### Build the matrix
+
+```
+gcc -Wall -o buildMatrix buildMatrix.c
+./buildMatrix
+```
+
 ### View the m * n matrix(actually n * n)
 The matrix can be view by the UNIX command
 ```
