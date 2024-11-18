@@ -68,7 +68,7 @@ void read_row_striped_matrix (
 	
 	MPI_Comm_size(comm, &p);
 	MPI_Comm_rank(comm, &id);
-	datum_size = sizeof(dtype) - 4;
+	datum_size = sizeof(dtype);
 
 	if (id == p - 1) {
 		infileptr = fopen(s, "rb");
@@ -99,7 +99,7 @@ void read_row_striped_matrix (
 	if (id == p - 1) {
 		for(int i = 0; i < p - 1; i++) {
 			x = fread(*storage, datum_size, BLOCK_SIZE(i, p, *m) * *n, infileptr);
-			printf("Send to process %d %d rows and %d elements and n : %d\n", i, BLOCK_SIZE(i, p, *m), x, *n);
+			//printf("Send to process %d %d rows and %d elements and n : %d\n", i, BLOCK_SIZE(i, p, *m), x, *n);
 			for (int k = 0; k < BLOCK_SIZE(i, p, *m); k++) {
 				for (int j = 0; j < *n; j++) {
 					printf("%d ", *((int *)(*storage) + k * *n + j));
@@ -139,7 +139,7 @@ void print_row_striped_matrix (
 	if (!id) {
 		print_submatrix(a, dtype, local_rows, n);
 		if (p > 1) {
-			datum_size = sizeof(dtype) - 4;
+			datum_size = sizeof(dtype);
 			max_block_size = BLOCK_SIZE(p - 1, p, m);
 			bstorage = (void *) malloc(max_block_size * n * datum_size);
 			b = (void **) malloc(max_block_size * PTR_SIZE);
