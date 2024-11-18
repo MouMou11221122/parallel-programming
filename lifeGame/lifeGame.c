@@ -8,13 +8,13 @@
 #define BLOCK_LOW(id, p, n)  ((id) * (n) / (p))
 #define BLOCK_HIGH(id, p, n) (BLOCK_LOW((id) + 1, p, n) - 1)
 #define BLOCK_NUMS(id, p, n) (BLOCK_LOW((id) + 1, p, n) - BLOCK_LOW(id, p, n)) 
-#define DOWNSTREAM_MSG	1
-#define UPSTREAM_MSG	2
+#define DOWNSTREAM_MSG		1
+#define UPSTREAM_MSG		2
 #define DUMMY_MSG		3
 #define OUTPUT_MSG		4
 
 int proc_num;
-int	proc_idx;
+int proc_idx;
 int row_num;
 int col_num;
 
@@ -244,7 +244,7 @@ int main (int argc, char** argv) {
 
 	/*	Calculate the local block num and local cell num	*/
 	/*	and allocate the sub-matrix for cells. Then read	*/
-	/*	the cells from matrix.bin.							*/
+	/*	the cells from matrix.bin.				*/
 	bool* sub_matrix;
 	blk_num = BLOCK_NUMS(proc_idx, proc_num, row_num);
 	cell_num = blk_num * col_num;
