@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <mpi.h>
+#include <string.h>
+#include <sys/syscall.h>
 
 #define PRINT_MATRIX_IN_SEQ()                        			   	\
     for (int i = 0; i < row_num; i++) {         	  			 	\
@@ -22,7 +24,8 @@
 #define DUMMY_MSG		3
 #define OUTPUT_MSG		4
 
-
+int output_num;
+char output_buf[65536];
 
 int proc_num;
 int proc_idx;
@@ -35,18 +38,34 @@ int file_offset;
 
 
 void show_sub_matrix (bool* sub_matrix) {
-	if (proc_idx == 0) {
-		//printf("sub-matrix from process %d :\n", proc_idx);
-		for (int i = 0; i < blk_num; i++) {
-			for(int j = 0; j < col_num; j++) {
-				printf("%d ", sub_matrix[i * col_num + j]);
-			}
-			printf("\n");
+	for (int i = 0; i < blk_num; i++) {
+		for(int j = 0; j < col_num; j++) {
+			printf("%d ", sub_matrix[i * col_num + j]);
 		}
-	} else {
-		MPI_Send(sub_matrix, cell_num, MPI_CHAR, 0, OUTPUT_MSG, MPI_COMM_WORLD);
+		printf("\n");
 	}
-	//fflush(NULL);
+	fflush(stdout);
+	
+	/*
+	for (int i = 0; i < blk_num; i++) {
+		output_num = 0;
+		for (int j = 0; j < col_num; j++) {
+			if (sub_matrix[i * col_num + j]) {
+				sprintf(output_buf + output_num, "%c", '1');
+			} else {
+				sprintf(output_buf + output_num, "%c", '0');
+			}
+			output_num++;
+			sprintf(output_buf + output_num, "%c", ' ');
+			output_num++;
+		}
+		sprintf(output_buf + output_num, "%c", '\n');
+		output_num++;
+		//write(1, output_buf, output_num);
+		syscall(SYS_write, 1, output_buf, output_num);
+
+	}
+	*/
 }
 
 void update_row (bool* top_row, bool* middle_row, bool* bottom_row, bool* updated_sub_matrix, int updated_row_idx)
@@ -175,50 +194,41 @@ void update_sub_matrix (bool** sub_matrix)
 void periolically_show (bool** sub_matrix, int iteration, int freq) {
 	char dummy;
 	int cnt = 0;
-	bool* output_buf;
 
-	if (proc_idx == 0) {
-		output_buf = malloc(sizeof(bool) * BLOCK_NUMS(proc_num - 1, proc_num, row_num));
-		if (output_buf == NULL)	MPI_Abort(MPI_COMM_WORLD, 1);
-	}
-	for (int i = -1; i < iteration; i++) {
-		if (i == -1 || ++cnt == freq) {
+	for (int x = -1; x < iteration; x++) {
+		if (x == -1 || ++cnt == freq) {
 			if (proc_idx == 0) {
-				printf("iteration %d :\n", i + 1);
-				show_sub_matrix(*sub_matrix);
-				//fflush(NULL);
-				MPI_Send(&dummy, 1, MPI_CHAR, proc_idx + 1, DUMMY_MSG, MPI_COMM_WORLD);
-				for (int i = 1; i < proc_num; i++ ) {
-					MPI_Recv(output_buf, BLOCK_NUMS(i, proc_num, row_num) * col_num, MPI_CHAR, i, OUTPUT_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					//printf("sub-matrix from process %d :\n", i);
-					for (int j = 0; j < BLOCK_NUMS(i, proc_num, row_num); j++) {
-						for (int k = 0; k < col_num; k++) {
-							printf("%d ", output_buf[j * col_num + k]);
-						}
-						printf("\n");
-					}
+				if (x != -1) {
+					MPI_Recv(&dummy, 1, MPI_CHAR, (proc_idx - 1 + proc_num) % proc_num, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				}
+				printf("iteration %d :\n", x + 1);
+				//sprintf(output_buf, "iteration %d :\n", x + 1);
+				//write(1, output_buf, strlen(output_buf));
+				//syscall(SYS_write, 1, output_buf, strlen(output_buf));
+				show_sub_matrix(*sub_matrix);
+				MPI_Send(&dummy, 1, MPI_CHAR, proc_idx + 1, DUMMY_MSG, MPI_COMM_WORLD);
 			} else if (proc_idx == proc_num - 1) {
 				MPI_Recv(&dummy, 1, MPI_CHAR, proc_idx - 1, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				printf("From process %d and interation %d :\n", proc_idx, x + 1);
 				show_sub_matrix(*sub_matrix);
-				//fflush(NULL);
+ 				MPI_Send(&dummy, 1, MPI_CHAR, (proc_idx + 1) % proc_num, DUMMY_MSG, MPI_COMM_WORLD);	
 			} else {
 				MPI_Recv(&dummy, 1, MPI_CHAR, proc_idx - 1, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				printf("From process %d and interation %d :\n", proc_idx, x + 1);
 				show_sub_matrix(*sub_matrix);
-				//fflush(NULL);
 				MPI_Send(&dummy, 1, MPI_CHAR, proc_idx + 1, DUMMY_MSG, MPI_COMM_WORLD);	
 			}
 			cnt = 0;
-			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		if (i != iteration - 1) update_sub_matrix(sub_matrix);
+		//MPI_Barrier(MPI_COMM_WORLD);
+		if (x != iteration - 1) update_sub_matrix(sub_matrix);
 	}
-
-	if (proc_idx == 0) free(output_buf);
 }
 
 void seq_sol (int fd, int iter, int freq) {
 	ssize_t read_num;
+	double start_time, end_time;
+
 	/*	read row nums	*/
 	if ((read_num = read(fd, &row_num, sizeof(int))) == -1) {
 		fprintf(stderr, "Read row error from process %d\n", proc_idx);
@@ -249,7 +259,8 @@ void seq_sol (int fd, int iter, int freq) {
 		fprintf(stderr, "Read matrix error from process %d\n", proc_idx);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
-
+	
+	start_time = MPI_Wtime();
 	int times = 0;
 	for (int k = 0; k < iter; k++) {
 		if (k == 0) {
@@ -297,6 +308,9 @@ void seq_sol (int fd, int iter, int freq) {
 		}
 	}
 
+	end_time = MPI_Wtime();
+	printf("real execution time: %.10f seconds\n", end_time - start_time);
+	
 	free(buf);
 	free(tmp);
 }
@@ -378,8 +392,23 @@ int main (int argc, char** argv) {
 	printf("\n");
 	*/
 
-	periolically_show(&sub_matrix, iteration, display_freq);
+	double start_time, end_time;
+	double real_start_time, real_end_time;
 
+	MPI_Barrier(MPI_COMM_WORLD);
+	start_time = MPI_Wtime();
+	periolically_show(&sub_matrix, iteration, display_freq);
+	end_time = MPI_Wtime();
+	MPI_Reduce(&start_time, &real_start_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&end_time, &real_end_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	if (!proc_idx) {
+		FILE* fp;
+		fp = fopen("./out", "w");
+		fprintf(fp, "real execution time: %lf seconds\n", real_end_time - real_start_time);
+		fprintf(fp, "start time : %.10f, end time : %.10f, real start time : %.10f, real end time : %.10f\n", start_time, end_time, real_start_time, real_end_time);
+	}
+	
+	free(sub_matrix);
 	MPI_Finalize();
 	exit(0);
 }
