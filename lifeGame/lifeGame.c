@@ -5,13 +5,24 @@
 #include <fcntl.h>
 #include <mpi.h>
 
+#define PRINT_MATRIX_IN_SEQ()                        			   	\
+    for (int i = 0; i < row_num; i++) {         	  			 	\
+        for (int j = 0; j < col_num; j++) {    	  				 	\
+            printf("%d ", buf[LINEAR_ADDRESS(i, j, col_num)]); 		\
+        }                                    				        \
+        printf("\n");                              					\
+    }
+
 #define BLOCK_LOW(id, p, n)  ((id) * (n) / (p))
 #define BLOCK_HIGH(id, p, n) (BLOCK_LOW((id) + 1, p, n) - 1)
 #define BLOCK_NUMS(id, p, n) (BLOCK_LOW((id) + 1, p, n) - BLOCK_LOW(id, p, n)) 
+#define LINEAR_ADDRESS(i, j, col) ((i) * (col) + (j))
 #define DOWNSTREAM_MSG		1
 #define UPSTREAM_MSG		2
 #define DUMMY_MSG		3
 #define OUTPUT_MSG		4
+
+
 
 int proc_num;
 int proc_idx;
@@ -206,11 +217,92 @@ void periolically_show (bool** sub_matrix, int iteration, int freq) {
 	if (proc_idx == 0) free(output_buf);
 }
 
+void seq_sol (int fd, int iter, int freq) {
+	ssize_t read_num;
+	/*	read row nums	*/
+	if ((read_num = read(fd, &row_num, sizeof(int))) == -1) {
+		fprintf(stderr, "Read row error from process %d\n", proc_idx);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
 
+	/*	read column nums	*/
+	if ((read_num = read(fd, &col_num, sizeof(int))) == -1) {
+		fprintf(stderr, "Read column error from process %d\n", proc_idx);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+	
+	bool* buf;
+	bool* tmp;
+	buf = malloc(sizeof(bool) * row_num * col_num);
+	if (buf == NULL) {
+		fprintf(stderr, "fail to allocate memory from process %d\n", proc_idx);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+
+	tmp = malloc(sizeof(bool) * row_num * col_num);
+	if (tmp == NULL) {
+		fprintf(stderr, "fail to allocate memory from process %d\n", proc_idx);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+
+	if ((read_num = read(fd, buf, row_num * col_num * sizeof(bool))) == -1 || read_num != row_num * col_num * sizeof(bool)) {
+		fprintf(stderr, "Read matrix error from process %d\n", proc_idx);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+
+	int times = 0;
+	for (int k = 0; k < iter; k++) {
+		if (k == 0) {
+			printf("initial state :\n");
+			PRINT_MATRIX_IN_SEQ();
+		}
+
+		for (int i = 0; i < row_num; i++) {
+			for (int j = 0; j < col_num; j++) {
+				int cnt = 0;
+				if (i > 0) {
+					if (j > 0) cnt += buf[LINEAR_ADDRESS(i - 1, j - 1, col_num)];
+					cnt += buf[LINEAR_ADDRESS(i - 1, j, col_num)];
+					if (j < col_num - 1) cnt += buf[LINEAR_ADDRESS(i - 1, j + 1, col_num)];
+				}
+
+				if (j > 0) cnt += buf[LINEAR_ADDRESS(i, j - 1, col_num)];
+				if (j < col_num - 1) cnt += buf[LINEAR_ADDRESS(i, j + 1, col_num)];
+
+				if (i < row_num - 1) {
+					if (j > 0) cnt += buf[LINEAR_ADDRESS(i + 1, j - 1, col_num)];
+					cnt += buf[LINEAR_ADDRESS(i + 1, j, col_num)];
+					if (j < col_num - 1) cnt += buf[LINEAR_ADDRESS(i + 1, j + 1, col_num)];
+				}
+
+				if(buf[LINEAR_ADDRESS(i, j, col_num)]) {
+					if (cnt != 2 && cnt != 3) tmp[LINEAR_ADDRESS(i, j, col_num)] = false;
+					else tmp[LINEAR_ADDRESS(i, j, col_num)] = true;
+				} else {
+					if (cnt == 3) tmp[LINEAR_ADDRESS(i, j, col_num)] = true;
+					else tmp[LINEAR_ADDRESS(i, j, col_num)] = false;
+				}
+				//printf("(%d, %d) : %d\n", i, j, cnt);
+			}
+		}
+
+		tmp = (bool*)((long)tmp ^ (long)buf);
+		buf = (bool*)((long)tmp ^ (long)buf);
+		tmp = (bool*)((long)tmp ^ (long)buf);
+
+		if (++times == freq) {
+			printf("iteration %d :\n", k + 1);
+			PRINT_MATRIX_IN_SEQ();
+			times = 0;
+		}
+	}
+
+	free(buf);
+	free(tmp);
+}
 
 int main (int argc, char** argv) {
 	int fd;
-	char* file_name;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &proc_idx);
@@ -220,7 +312,11 @@ int main (int argc, char** argv) {
 		fprintf(stderr, "Usage: %s [file name] [iteration] [frequency]\n", argv[0]);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
-	file_name = argv[1];
+
+	char* file_name = argv[1];
+	int iteration = atoi(argv[2]);
+	int display_freq = atoi(argv[3]);
+
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	/*	open the matrix file	*/
@@ -229,6 +325,13 @@ int main (int argc, char** argv) {
 		fprintf(stderr, "Fail to open file : matrix.bin from process %d\n", proc_idx);
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
+
+	if (proc_num == 1) {
+		seq_sol(fd, iteration, display_freq);
+		MPI_Finalize();
+		exit(0);
+	}
+
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	ssize_t read_num;
@@ -274,9 +377,6 @@ int main (int argc, char** argv) {
 	}
 	printf("\n");
 	*/
-
-	int iteration = atoi(argv[2]);
-	int display_freq = atoi(argv[3]);
 
 	periolically_show(&sub_matrix, iteration, display_freq);
 
