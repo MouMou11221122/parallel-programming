@@ -201,21 +201,21 @@ void periolically_show (bool** sub_matrix, int iteration, int freq) {
 				if (x != -1) {
 					MPI_Recv(&dummy, 1, MPI_CHAR, (proc_idx - 1 + proc_num) % proc_num, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				}
-				printf("iteration %d :\n", x + 1);
+				//printf("iteration %d :\n", x + 1);
 				//sprintf(output_buf, "iteration %d :\n", x + 1);
 				//write(1, output_buf, strlen(output_buf));
 				//syscall(SYS_write, 1, output_buf, strlen(output_buf));
-				show_sub_matrix(*sub_matrix);
+				//show_sub_matrix(*sub_matrix);
 				MPI_Send(&dummy, 1, MPI_CHAR, proc_idx + 1, DUMMY_MSG, MPI_COMM_WORLD);
 			} else if (proc_idx == proc_num - 1) {
 				MPI_Recv(&dummy, 1, MPI_CHAR, proc_idx - 1, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("From process %d and interation %d :\n", proc_idx, x + 1);
-				show_sub_matrix(*sub_matrix);
+				//printf("From process %d and interation %d :\n", proc_idx, x + 1);
+				//show_sub_matrix(*sub_matrix);
  				MPI_Send(&dummy, 1, MPI_CHAR, (proc_idx + 1) % proc_num, DUMMY_MSG, MPI_COMM_WORLD);	
 			} else {
 				MPI_Recv(&dummy, 1, MPI_CHAR, proc_idx - 1, DUMMY_MSG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("From process %d and interation %d :\n", proc_idx, x + 1);
-				show_sub_matrix(*sub_matrix);
+				//printf("From process %d and interation %d :\n", proc_idx, x + 1);
+				//show_sub_matrix(*sub_matrix);
 				MPI_Send(&dummy, 1, MPI_CHAR, proc_idx + 1, DUMMY_MSG, MPI_COMM_WORLD);	
 			}
 			cnt = 0;
@@ -264,8 +264,8 @@ void seq_sol (int fd, int iter, int freq) {
 	int times = 0;
 	for (int k = 0; k < iter; k++) {
 		if (k == 0) {
-			printf("initial state :\n");
-			PRINT_MATRIX_IN_SEQ();
+			//printf("initial state :\n");
+			//PRINT_MATRIX_IN_SEQ();
 		}
 
 		for (int i = 0; i < row_num; i++) {
@@ -302,8 +302,8 @@ void seq_sol (int fd, int iter, int freq) {
 		tmp = (bool*)((long)tmp ^ (long)buf);
 
 		if (++times == freq) {
-			printf("iteration %d :\n", k + 1);
-			PRINT_MATRIX_IN_SEQ();
+			//printf("iteration %d :\n", k + 1);
+			//PRINT_MATRIX_IN_SEQ();
 			times = 0;
 		}
 	}
