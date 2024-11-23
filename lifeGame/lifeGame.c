@@ -6,6 +6,7 @@
 #include <mpi.h>
 #include <string.h>
 #include <sys/syscall.h>
+#include "utilities.h"
 
 #define PRINT_MATRIX_IN_SEQ()                        			   	\
     for (int i = 0; i < row_num; i++) {         	  			 	\
@@ -309,8 +310,9 @@ void seq_sol (int fd, int iter, int freq) {
 	}
 
 	end_time = MPI_Wtime();
-	printf("real execution time: %.10f seconds\n", end_time - start_time);
-	
+	//printf("real execution time: %.10f seconds\n", end_time - start_time);
+	output_real_exec_time(end_time - start_time);
+
 	free(buf);
 	free(tmp);
 }
@@ -402,10 +404,11 @@ int main (int argc, char** argv) {
 	MPI_Reduce(&start_time, &real_start_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&end_time, &real_end_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 	if (!proc_idx) {
-		FILE* fp;
-		fp = fopen("./out", "w");
-		fprintf(fp, "real execution time: %lf seconds\n", real_end_time - real_start_time);
-		fprintf(fp, "start time : %.10f, end time : %.10f, real start time : %.10f, real end time : %.10f\n", start_time, end_time, real_start_time, real_end_time);
+		//FILE* fp;
+		//fp = fopen("./out", "w");
+		//fprintf(fp, "real execution time: %lf seconds\n", real_end_time - real_start_time);
+		//fprintf(fp, "start time : %.10f, end time : %.10f, real start time : %.10f, real end time : %.10f\n", start_time, end_time, real_start_time, real_end_time);
+		output_real_exec_time(real_end_time - real_start_time);
 	}
 	
 	free(sub_matrix);
