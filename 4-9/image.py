@@ -22,6 +22,7 @@ def plot_from_csv(filename):
 
     plt.legend()
     plt.grid(True)
-    plt.show()
+    # plt.show()
+    plt.savefig('output_plot.png')
 
 plot_from_csv('output.csv')

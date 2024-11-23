@@ -1,5 +1,5 @@
 CC = mpicc
-SRC = parallel_main.c
+SRC = main.c
 EXECUTABLE = a.out
 CSV = output.csv
 LOG = time.log

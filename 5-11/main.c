@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
 	start_time = MPI_Wtime();
 
-    mpf_set_default_prec(332);  
+    mpf_set_default_prec(512);  
 
 	long long n = atoll(argv[1]);
 	int prec = atoi(argv[2]);
