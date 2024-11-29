@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     fwrite(&n, sizeof(int), 1, output_file);
 
     for (int i = 0; i < m * n; i++) {
-        unsigned char element = rand() % 2;  // 随机生成 0 或 1
+        unsigned char element = rand() % 2;  
         fwrite(&element, sizeof(unsigned char), 1, output_file);
     }
 
