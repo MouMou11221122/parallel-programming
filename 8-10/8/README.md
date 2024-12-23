@@ -1,0 +1,1 @@
+Write a program that implements matrix-vector multiplication based on a checkerboard block decomposition of the matrix. The program should read the matrix and the vector from an input file and print the answer to standard output. The names of the files containing the matrix and the vector should be specified as command-line arguments.
