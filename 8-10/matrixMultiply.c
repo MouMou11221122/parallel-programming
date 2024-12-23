@@ -3,6 +3,7 @@
 #include <mpi.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "utilities.h"
 
 #define BLOCK_LOW(id, p, n)  ((id) * (n) / (p))
 #define BLOCK_HIGH(id, p, n) (BLOCK_LOW((id) + 1, p, n) - 1)
@@ -15,6 +16,8 @@ int * vec_buf;
 int * subvec_buf;
 int * result_subvec_partial;
 int * result_subvec = NULL;
+
+double start_time, end_time;
 
 bool grid_dim_resize (int * grid_dims, int mat_rows, int mat_cols) {
 	bool success = false;
@@ -192,16 +195,27 @@ int main (int argc, char* argv[])
 	printf("\n");
 	*/
 
+	if (grid_row_idx == 0 && grid_col_idx ==0) start_time = MPI_Wtime();
 	result_subvec_partial = malloc(sizeof(int) * submatrix_row_num);
 	for (int i = 0; i < submatrix_row_num; i++) {
-		if (i == 0) result_subvec_partial[i] = 0;
+		result_subvec_partial[i] = 0;
 		for (int j = 0; j < submatrix_col_num; j++) {
 			result_subvec_partial[i] += subvec_buf[j] * submatrix_buf[i * submatrix_col_num + j];
 		}
 	}
 
+	/*
+	if (grid_row_idx == 0 && grid_col_idx ==0) {
+		for (int j = 0; j < submatrix_col_num; j++) {
+			result_subvec_partial[i];
+		}
+	}
+	*/
+
 	if (grid_col_idx == 0) result_subvec = malloc(sizeof(int) * submatrix_row_num);
 	MPI_Reduce(result_subvec_partial, result_subvec, submatrix_row_num, MPI_INT, MPI_SUM, 0, row_comm);
+	
+	if (grid_row_idx == 0 && grid_col_idx ==0) end_time = MPI_Wtime();
 
 	//print the result
 	/*if (grid_col_idx == 0) {
@@ -243,12 +257,9 @@ int main (int argc, char* argv[])
 			MPI_Gatherv(result_subvec, submatrix_row_num, MPI_INT, NULL, NULL, NULL, MPI_INT, 0, col_comm);
 		}
 	}	
-
-	/*	
-	if (grid_col_idx == 0) {
-		for (int i = 0; i < submatrix_row_num; i++) printf("%d\n", result_subvec[i]);
-	}
-	*/
+	
+	//output the time
+	if (grid_row_idx == 0 && grid_col_idx == 0) output_real_exec_time(end_time - start_time);
 
 	/*	utilities
 	MPI_Comm_rank(grid_comm, &grid_rank);
